@@ -47,9 +47,8 @@ server {
     # information that could be used to find an exploit.
     server_tokens off;
 
-    # Uncomment this for a HTTP header that will let you know the cache status
-    # of an object.
-    # add_header X-Cache-Status $upstream_cache_status;
+    # Reports whether the response was a cache HIT, MISS, BYPASS, EXPIRED, etc.
+    add_header X-Cache-Status $upstream_cache_status;
 
     # Proxy caching configuration. Customize this for your needs.
     proxy_cache s3_cache;
