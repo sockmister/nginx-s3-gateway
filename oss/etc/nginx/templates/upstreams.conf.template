@@ -8,4 +8,12 @@ upstream storage_urls {
     zone s3_backends 64k;
 
     server ${S3_UPSTREAM} resolve;
+
+    # Keep a pool of idle TLS connections to S3 so that requests after idle
+    # periods do not pay the full TCP + TLS handshake cost each time.
+    # Tune keepalive_timeout to stay below S3's server-side idle timeout
+    # (~65 s in practice) to avoid sending on a half-closed connection.
+    keepalive ${PROXY_UPSTREAM_KEEPALIVE};
+    keepalive_timeout ${PROXY_UPSTREAM_KEEPALIVE_TIMEOUT};
+    keepalive_requests 1000;
 }

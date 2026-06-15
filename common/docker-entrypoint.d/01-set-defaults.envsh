@@ -98,3 +98,14 @@ fi
 if [ "${PROXY_CACHE_USE_STALE+x}" = "" ]; then
   export PROXY_CACHE_USE_STALE="error timeout http_500 http_502 http_503 http_504"
 fi
+
+# Number of idle keepalive connections to S3 maintained per worker.
+if [ "${PROXY_UPSTREAM_KEEPALIVE+x}" = "" ]; then
+  export PROXY_UPSTREAM_KEEPALIVE="32"
+fi
+
+# How long to keep an idle upstream connection alive. Set below S3's
+# server-side idle timeout (~65 s) to avoid writing on a half-closed socket.
+if [ "${PROXY_UPSTREAM_KEEPALIVE_TIMEOUT+x}" = "" ]; then
+  export PROXY_UPSTREAM_KEEPALIVE_TIMEOUT="60s"
+fi
