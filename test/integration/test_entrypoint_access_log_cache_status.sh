@@ -50,7 +50,8 @@ baseline_extra_env=(
 expected_disabled="$(cat << 'EXPECTED'
 log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
 '$status $body_bytes_sent "$http_referer" '
-'"$http_user_agent" "$http_x_forwarded_for"';
+'"$http_user_agent" "$http_x_forwarded_for" '
+'rt=$request_time urt=$upstream_response_time';
 
 access_log  /var/log/nginx/access.log  main;
 EXPECTED
@@ -59,7 +60,8 @@ EXPECTED
 expected_enabled="$(cat << 'EXPECTED'
 log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
 '$status $body_bytes_sent "$http_referer" '
-'"$http_user_agent" "$http_x_forwarded_for" "$upstream_cache_status"';
+'"$http_user_agent" "$http_x_forwarded_for" "$upstream_cache_status" '
+'rt=$request_time urt=$upstream_response_time';
 
 access_log  /var/log/nginx/access.log  main;
 EXPECTED

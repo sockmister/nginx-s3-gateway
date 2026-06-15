@@ -103,6 +103,12 @@ matchedLogLines() {
   grep -F "\"GET ${test_object_path} HTTP/1.1\" 200 " <<< "${gateway_logs}" || true
 }
 
+# Drops the trailing request-timing fields (rt=... urt=...) that this fork
+# appends after the X-Forwarded-For and optional cache-status fields.
+stripTimings() {
+  sed -E 's/ rt=[^ ]+ urt=[^ ]+$//'
+}
+
 # nginx writes each access-log line at request finalization, but the
 # container-stdout -> dockerd -> `docker logs` pipeline is asynchronous, so
 # the last line can lag the curl exit on a loaded runner. Both phases retry
@@ -123,7 +129,7 @@ if [ "${phase}" = "enabled" ]; then
   expected_statuses='"MISS" "HIT" "BYPASS"'
   attempt=0
   while true; do
-    statuses="$(matchedLogLines | awk '{print $NF}' | paste -sd' ')"
+    statuses="$(matchedLogLines | stripTimings | awk '{print $NF}' | paste -sd' ' -)"
     if [ "${statuses}" = "${expected_statuses}" ]; then
       break
     fi
@@ -153,8 +159,14 @@ else
     fi
     sleep "${log_wait_interval}"
   done
-  # curl sends no X-Forwarded-For, so the historical format ends in its "-"
-  # placeholder; a trailing cache-status field would end in "MISS" instead.
+  if ! grep -qE ' rt=[0-9.]+ urt=[^ ]+$' <<< "${log_line}"; then
+    e "FAIL [access log format]: expected the line to end with rt=/urt= request timings but got:"
+    e "${log_line}"
+    exit ${test_fail_exit_code}
+  fi
+  # curl sends no X-Forwarded-For, so with the timings stripped the format
+  # ends in its "-" placeholder; a cache-status field would end in "MISS".
+  log_line="$(stripTimings <<< "${log_line}")"
   if [ "${log_line%\"-\"}" = "${log_line}" ]; then
     e "FAIL [access log format]: expected the line to end at the X-Forwarded-For field but got:"
     e "${log_line}"
